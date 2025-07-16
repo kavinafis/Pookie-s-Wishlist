@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Wishlist</h2>
+<div class="wishlist-grid">
+    {% for item in items %}
+    <div class="wishlist-card">
+        {% if item.image_filename %}
+        <img src="{{ url_for('static', filename='uploads/' ~ item.image_filename) }}" alt="{{ item.name }}">
+        {% endif %}
+        <div class="wishlist-card-body">
+            <h5>{{ item.name }}</h5>
+            <p>{{ item.description }}</p>
+            {% if item.link %}
+            <a href="{{ item.link }}" target="_blank" class="btn btn-primary btn-sm mb-2">View Link</a>
+            {% endif %}
+            <form method="POST" action="{{ url_for('toggle_purchased', item_id=item.id) }}">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="purchased{{ item.id }}" name="purchased" onchange="this.form.submit()" {% if item.purchased %}checked{% endif %} style="accent-color: green;">
+                    <label class="form-check-label text-success" for="purchased{{ item.id }}">
+                        Purchased
+                    </label>
+                </div>
+            </form>
+            {% if user_id and user_id == item.user_id %}
+            <div>
+                <a href="{{ url_for('edit_item', item_id=item.id) }}" class="btn btn-sm btn-warning me-2">Edit</a>
+                <form method="POST" action="{{ url_for('delete_item', item_id=item.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this item?');">
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <p>No items in the wishlist yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}
