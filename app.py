@@ -30,6 +30,8 @@ class User(db.Model):
 class WishlistItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
+    price = db.Column(db.Integer, nullable=True)
+    category = db.Column(db.String(150), nullable=True)
     description = db.Column(db.Text, nullable=True)
     link = db.Column(db.String(300), nullable=True)
     image_filename = db.Column(db.String(300), nullable=True)
@@ -73,6 +75,8 @@ def add_item():
         return redirect(url_for('login'))
     if request.method == 'POST':
         name = request.form['name']
+        price = request.form.get('price')
+        category = request.form.get('category')
         description = request.form['description']
         link = request.form['link']
         image = request.files.get('image')
@@ -82,6 +86,8 @@ def add_item():
             image.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
         new_item = WishlistItem(
             name=name,
+            price=int(price) if price else None,
+            category=category,
             description=description,
             link=link,
             image_filename=image_filename,
@@ -104,6 +110,8 @@ def edit_item(item_id):
         return redirect(url_for('index'))
     if request.method == 'POST':
         item.name = request.form['name']
+        item.price = int(request.form.get('price')) if request.form.get('price') else None
+        item.category = request.form.get('category')
         item.description = request.form['description']
         item.link = request.form['link']
         image = request.files.get('image')
@@ -142,6 +150,29 @@ def toggle_purchased(item_id):
     item.purchased = not item.purchased
     db.session.commit()
     return redirect(url_for('index'))
+
+from flask import render_template, request, redirect, url_for, session, flash
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        # Limit registration to 2 users
+        user_count = User.query.count()
+        if user_count >= 2:
+            flash('Registration is closed. Maximum number of users reached.', 'danger')
+            return redirect(url_for('login'))
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists.', 'danger')
+            return redirect(url_for('register'))
+        new_user = User(username=username)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Registration successful. Please log in.', 'success')
+        return redirect(url_for('login'))
+    return render_template('registration.html')
 
 if __name__ == '__main__':
     with app.app_context():

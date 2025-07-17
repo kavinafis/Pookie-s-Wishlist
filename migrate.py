@@ -18,6 +18,8 @@ class User(db.Model):
 class WishlistItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
+    price = db.Column(db.Float, nullable=True)
+    category = db.Column(db.String(150), nullable=True)
     description = db.Column(db.Text, nullable=True)
     link = db.Column(db.String(300), nullable=True)
     image_filename = db.Column(db.String(300), nullable=True)
