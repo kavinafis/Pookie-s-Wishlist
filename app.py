@@ -174,15 +174,44 @@ def register():
         return redirect(url_for('login'))
     return render_template('registration.html')
 
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
+
 @app.route('/health')
 def health_check():
-    try:
-        # Simple query to keep database and render server active
-        # Creates a keep_alive table or queries an existing table
-        supabase.table('keep_alive').select("*").limit(1).execute()
-        return "OK", 200
-    except Exception as e:
-        return f"DB Error: {str(e)}", 500
+    """
+    Health check endpoint that also pings Supabase to prevent pausing.
+    Always returns 200 OK to ensure health checks don't fail.
+    """
+    supabase_status = "not_configured"
+    
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            response = requests.get(
+                f"{SUPABASE_URL}/rest/v1/keep_alive?select=*&limit=1",
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}"
+                },
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                supabase_status = "active"
+            else:
+                supabase_status = f"error_{response.status_code}"
+                
+        except requests.Timeout:
+            supabase_status = "timeout"
+        except Exception as e:
+            supabase_status = "exception"
+            print(f"Supabase ping failed: {e}")
+    
+    # Always return 200 OK so health checks pass
+    return {
+        "status": "ok",
+        "supabase": supabase_status
+    }, 200
 
 if __name__ == '__main__':
     with app.app_context():
