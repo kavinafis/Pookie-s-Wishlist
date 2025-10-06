@@ -176,7 +176,13 @@ def register():
 
 @app.route('/health')
 def health_check():
-    return "OK", 200
+    try:
+        # Simple query to keep database and render server active
+        # Creates a keep_alive table or queries an existing table
+        supabase.table('keep_alive').select("*").limit(1).execute()
+        return "OK", 200
+    except Exception as e:
+        return f"DB Error: {str(e)}", 500
 
 if __name__ == '__main__':
     with app.app_context():
